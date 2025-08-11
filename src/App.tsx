@@ -1,9 +1,15 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+import ChatPage from "./pages/ChatPage";
+
 function App() {
   return (
-    <div>
-      <h1>My Chat App</h1>
-      <p>Welcome! Start building your chat application here.</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/chat" element={<ChatPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
