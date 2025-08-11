@@ -3,10 +3,10 @@ import { Box, TextField, Button } from "@mui/material";
 import { socket } from "../../services/socket";
 import { useUser } from "../../context/UserContext";
 
-type Props = {
+type Props = Readonly<{
   onSend: (content: string) => void;
   room?: string;
-};
+}>;
 
 export default function MessageInput({ onSend, room }: Props) {
   const [value, setValue] = useState("");

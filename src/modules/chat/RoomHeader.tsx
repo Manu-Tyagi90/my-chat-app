@@ -1,8 +1,8 @@
 import { Typography, Box } from "@mui/material";
 
-type Props = {
+type Props = Readonly<{
   selectedRoom: string;
-};
+}>;
 
 export default function RoomHeader({ selectedRoom }: Props) {
   return (

@@ -172,14 +172,12 @@ export default function MessageList({ messages, room }: Props) {
   const { user } = useUser();
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
-  // Helper: Check if user is at (or near) the bottom
   const isAtBottom = () => {
     if (!listRef.current) return true;
     const { scrollTop, scrollHeight, clientHeight } = listRef.current;
     return scrollHeight - scrollTop - clientHeight < 30;
   };
 
-  // Scroll event: show/hide scroll-to-bottom button
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollToBottom(!isAtBottom());
@@ -194,7 +192,6 @@ export default function MessageList({ messages, room }: Props) {
     };
   }, [messages]);
 
-  // Auto-scroll only if user is at bottom
   useEffect(() => {
     if (isAtBottom() && endRef.current) {
       endRef.current.scrollIntoView({ behavior: "smooth" });
@@ -202,8 +199,7 @@ export default function MessageList({ messages, room }: Props) {
     if (user && room && messages.length > 0) {
       socket.emit("seen", { room, username: user.username });
     }
-    // eslint-disable-next-line
-  }, [messages]);
+  }, [messages, user, room]);
 
   return (
     <Box sx={{ position: "relative" }}>

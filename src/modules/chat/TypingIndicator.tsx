@@ -1,8 +1,8 @@
 import { Typography, Box } from "@mui/material";
 
-type Props = {
+type Props = Readonly<{
   typingUser: string | null;
-};
+}>;
 
 export default function TypingIndicator({ typingUser }: Props) {
   if (!typingUser) return null;

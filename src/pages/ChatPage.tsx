@@ -28,9 +28,7 @@ const playNotificationSound = () => {
   if (!notificationSound) return;
   
   notificationSound.currentTime = 0;
-  notificationSound.play().catch(() => {
-    // Some browsers block sound if not user-initiated
-  });
+  notificationSound.play().catch(() => {});
 };
 
 const showBrowserNotification = (message: Message, room: string) => {
@@ -106,7 +104,6 @@ export default function ChatPage() {
 
   const prevRoomRef = useRef<string | null>(null);
 
-  // Ask for notification permission on mount
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
@@ -117,7 +114,6 @@ export default function ChatPage() {
     setRoomMessages(prev => {
       const updatedMessages = updateRoomMessages(prev, data.room, data.message);
       
-      // Show notification if message is from another user
       if (data.message.username !== user?.username) {
         showBrowserNotification(data.message, data.room);
       }
@@ -175,7 +171,6 @@ export default function ChatPage() {
     socket.disconnect();
   };
 
-  // Register socket listeners once when user is present
   useEffect(() => {
     if (!user) {
       navigate("/");
@@ -189,7 +184,6 @@ export default function ChatPage() {
     return cleanupSocketListeners;
   }, [user, navigate]);
 
-  // Only emit join/leave when the room actually changes
   useEffect(() => {
     if (!user) return;
 
@@ -227,7 +221,6 @@ export default function ChatPage() {
 
     socket.emit("send_room_message", { room: selectedRoom, message });
 
-    // Optimistic update
     setRoomMessages(prev => ({
       ...prev,
       [selectedRoom]: [...(prev[selectedRoom] || []), message]

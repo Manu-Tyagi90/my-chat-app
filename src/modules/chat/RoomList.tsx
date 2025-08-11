@@ -1,11 +1,11 @@
 import { Stack, Button } from "@mui/material";
 
-type Props = {
+type Props = Readonly<{
   rooms: string[];
   selectedRoom: string;
   onJoinRoom: (room: string) => void;
   onCreateRoom: () => void;
-};
+}>;
 
 export default function RoomList({
   rooms,

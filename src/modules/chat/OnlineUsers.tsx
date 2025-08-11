@@ -1,8 +1,8 @@
 import { Paper, Typography, Stack, Chip, Avatar } from "@mui/material";
 
-type Props = {
+type Props = Readonly<{
   onlineUsers: string[];
-};
+}>;
 
 export default function OnlineUsers({ onlineUsers }: Props) {
   return (
