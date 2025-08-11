@@ -1,17 +1,17 @@
 import { useState, useRef } from "react";
+import { Box, TextField, Button } from "@mui/material";
 import { socket } from "../../services/socket";
 import { useUser } from "../../context/UserContext";
-import styles from "./MessageInput.module.css";
 
 type Props = {
   onSend: (content: string) => void;
   room?: string;
 };
 
-const MessageInput = ({ onSend, room }: Props) => {
+export default function MessageInput({ onSend, room }: Props) {
   const [value, setValue] = useState("");
   const { user } = useUser();
-  const typingTimeout = useRef<number | null>(null);
+  const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);
@@ -20,7 +20,7 @@ const MessageInput = ({ onSend, room }: Props) => {
       socket.emit("typing", { room, username: user.username });
 
       if (typingTimeout.current) clearTimeout(typingTimeout.current);
-      typingTimeout.current = window.setTimeout(() => {
+      typingTimeout.current = setTimeout(() => {
         socket.emit("stop_typing", { room, username: user.username });
       }, 1000);
     }
@@ -36,29 +36,31 @@ const MessageInput = ({ onSend, room }: Props) => {
     }
   };
 
-  // Emit stop_typing when input loses focus
   const handleBlur = () => {
     if (user && room) socket.emit("stop_typing", { room, username: user.username });
     if (typingTimeout.current) clearTimeout(typingTimeout.current);
   };
 
   return (
-    <form className={styles.inputForm} onSubmit={handleSend} aria-label="Send message">
-      <input
-        type="text"
+    <Box
+      component="form"
+      onSubmit={handleSend}
+      display="flex"
+      gap={1}
+      alignItems="center"
+    >
+      <TextField
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
         placeholder="Type a message..."
-        className={styles.inputBox}
-        aria-label="Type a message"
-        autoComplete="off"
+        variant="outlined"
+        size="small"
+        fullWidth
       />
-      <button type="submit" className={styles.sendBtn} aria-label="Send message">
+      <Button type="submit" variant="contained" color="primary">
         Send
-      </button>
-    </form>
+      </Button>
+    </Box>
   );
-};
-
-export default MessageInput;
+}

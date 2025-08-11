@@ -1,9 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
-import styles from "./LoginPage.module.css";
+import {
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Stack
+} from "@mui/material";
 
-function LoginPage() {
+export default function LoginPage() {
   const [username, setUsername] = useState("");
   const { login } = useUser();
   const navigate = useNavigate();
@@ -17,31 +24,48 @@ function LoginPage() {
   };
 
   return (
-    <main className={styles.container}>
-      <section className={styles.loginSection} aria-label="Login form">
-        <h1 className={styles.title}>Login</h1>
-        <form className={styles.form} onSubmit={handleSubmit} autoComplete="off">
-          <label htmlFor="username" className={styles.label}>
-            Username
-          </label>
-          <input
-            id="username"
-            type="text"
-            className={styles.input}
-            placeholder="Enter username"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            autoFocus
-            autoComplete="off"
-            required
-          />
-          <button type="submit" className={styles.loginBtn}>
-            Login
-          </button>
+    <Container
+      maxWidth="xs"
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh"
+      }}
+    >
+      <Paper
+        elevation={3}
+        sx={{
+          p: 4,
+          width: "100%",
+          borderRadius: 2
+        }}
+      >
+        <Typography variant="h5" mb={3} fontWeight="bold" align="center">
+          Login
+        </Typography>
+
+        <form onSubmit={handleSubmit}>
+          <Stack spacing={2}>
+            <TextField
+              label="Username"
+              variant="outlined"
+              fullWidth
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="off"
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              type="submit"
+              fullWidth
+            >
+              Login
+            </Button>
+          </Stack>
         </form>
-      </section>
-    </main>
+      </Paper>
+    </Container>
   );
 }
-
-export default LoginPage;

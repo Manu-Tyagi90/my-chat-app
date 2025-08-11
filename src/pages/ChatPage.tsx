@@ -1,7 +1,14 @@
-import { useEffect, useState } from "react";
+import {
+  Container,
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Stack
+} from "@mui/material";
+import { useEffect, useState, useRef } from "react";
 import { useUser } from "../context/UserContext";
 import { useNavigate } from "react-router-dom";
-import { socket } from "../services/socket";
 import MessageList from "../modules/chat/MessageList";
 import MessageInput from "../modules/chat/MessageInput";
 import RoomList from "../modules/chat/RoomList";
@@ -9,9 +16,15 @@ import OnlineUsers from "../modules/chat/OnlineUsers";
 import RoomHeader from "../modules/chat/RoomHeader";
 import TypingIndicator from "../modules/chat/TypingIndicator";
 import type { Message } from "../types/message";
-import styles from "./ChatPage.module.css";
+import { socket } from "../services/socket";
 
-function ChatPage() {
+let notificationSound: HTMLAudioElement | null = null;
+
+if (typeof window !== "undefined") {
+  notificationSound = new Audio("/notification.mp3");
+}
+
+export default function ChatPage() {
   const { user, logout } = useUser();
   const navigate = useNavigate();
 
@@ -21,6 +34,16 @@ function ChatPage() {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [typingUser, setTypingUser] = useState<string | null>(null);
 
+  const prevRoomRef = useRef<string | null>(null);
+
+  // Ask for notification permission on mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Register socket listeners once when user is present
   useEffect(() => {
     if (!user) {
       navigate("/");
@@ -30,24 +53,56 @@ function ChatPage() {
     socket.connect();
     socket.emit("join", user.username);
 
+    socket.on("receive_message", (data: { room: string; message: Message }) => {
+      setRoomMessages(prev => {
+        const alreadyExists = (prev[data.room] || []).some(
+          (msg) =>
+            msg.username === data.message.username &&
+            msg.timestamp === data.message.timestamp &&
+            msg.content === data.message.content
+        );
+        if (alreadyExists) return prev;
+
+        // Browser notification + sound
+        if (
+          data.message.username !== user?.username &&
+          "Notification" in window &&
+          Notification.permission === "granted" &&
+          document.visibilityState !== "visible"
+        ) {
+          new Notification(
+            `${data.message.username} in ${data.room}`,
+            {
+              body: data.message.content,
+              icon: "/favicon.ico"
+            }
+          );
+          if (notificationSound) {
+            try {
+              notificationSound.currentTime = 0;
+              notificationSound.play().catch((e) => {
+                // Some browsers block sound if not user-initiated
+                // console.log("Notification sound play error:", e);
+              });
+            } catch (e) {
+              // console.log("Notification sound error:", e);
+            }
+          }
+        }
+
+        return {
+          ...prev,
+          [data.room]: [...(prev[data.room] || []), data.message]
+        };
+      });
+    });
+
     socket.on("room_list", (roomList: string[]) => {
       setRooms(roomList);
-      if (!roomList.includes(selectedRoom)) {
-        setSelectedRoom("General");
-      }
     });
 
     socket.on("room_message_history", (data: { room: string; messages: Message[] }) => {
       setRoomMessages(prev => ({ ...prev, [data.room]: data.messages }));
-    });
-
-    socket.on("receive_message", (data: { room: string; message: Message }) => {
-      setRoomMessages(prev => {
-        const updated = { ...prev };
-        if (!updated[data.room]) updated[data.room] = [];
-        updated[data.room] = [...updated[data.room], data.message];
-        return updated;
-      });
     });
 
     socket.on("online_users", (users: string[]) => {
@@ -63,45 +118,43 @@ function ChatPage() {
     });
 
     socket.on("seen_update", (data: { room: string; seenBy: string }) => {
-      setRoomMessages(prev => {
-        const updated = { ...prev };
-        if (!updated[data.room]) return updated;
-        updated[data.room] = updated[data.room].map(msg => {
-          if (!msg.seenBy) msg.seenBy = [];
-          if (!msg.seenBy.includes(data.seenBy)) {
-            return { ...msg, seenBy: [...msg.seenBy, data.seenBy] };
-          }
-          return msg;
-        });
-        return updated;
-      });
+      setRoomMessages(prev => ({
+        ...prev,
+        [data.room]: prev[data.room]?.map(msg =>
+          !msg.seenBy?.includes(data.seenBy)
+            ? { ...msg, seenBy: [...(msg.seenBy || []), data.seenBy] }
+            : msg
+        ) || []
+      }));
     });
 
-    socket.emit("join_room", { username: user.username, room: selectedRoom });
-
     return () => {
+      socket.off("receive_message");
       socket.off("room_list");
       socket.off("room_message_history");
-      socket.off("receive_message");
       socket.off("online_users");
       socket.off("user_typing");
       socket.off("user_stop_typing");
       socket.off("seen_update");
       socket.disconnect();
     };
-    // eslint-disable-next-line
   }, [user, navigate]);
 
+  // Only emit join/leave when the room actually changes
   useEffect(() => {
     if (!user) return;
-    socket.emit("join_room", { username: user.username, room: selectedRoom });
+
+    if (prevRoomRef.current !== selectedRoom) {
+      if (prevRoomRef.current) {
+        socket.emit("leave_room", { username: user.username, room: prevRoomRef.current });
+      }
+      socket.emit("join_room", { username: user.username, room: selectedRoom });
+      prevRoomRef.current = selectedRoom;
+    }
   }, [selectedRoom, user]);
 
   const handleJoinRoom = (room: string) => {
     if (!user) return;
-    if (selectedRoom) {
-      socket.emit("leave_room", { username: user.username, room: selectedRoom });
-    }
     setSelectedRoom(room);
   };
 
@@ -114,52 +167,52 @@ function ChatPage() {
 
   const handleSend = (content: string) => {
     if (!user) return;
+
     const timestamp = new Date().toISOString();
     const message: Message = {
       username: user.username,
       content,
       timestamp,
-      seenBy: [user.username], // sender has seen their own message
+      seenBy: [user.username]
     };
-    if (selectedRoom) {
-      socket.emit("send_room_message", { room: selectedRoom, message });
-      // Do not update state here! Wait for server event.
-    }
+
+    socket.emit("send_room_message", { room: selectedRoom, message });
+
+    // Optimistic update
+    setRoomMessages(prev => ({
+      ...prev,
+      [selectedRoom]: [...(prev[selectedRoom] || []), message]
+    }));
   };
 
   if (!user) return null;
 
   return (
-    <main className={styles.container}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Welcome, {user.username}!</h1>
-        <button className={styles.logoutBtn} onClick={logout}>Logout</button>
-      </header>
+    <Container maxWidth="md" sx={{ px: { xs: 1, sm: 2 }, py: { xs: 1, sm: 3 } }}>
+      <Paper elevation={3} sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", flexDirection: "column", minHeight: "85vh", width: "100%", borderRadius: 2, overflow: "hidden" }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
+          <Typography variant="h6" sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}>
+            Welcome, {user.username}!
+          </Typography>
+          <Button variant="contained" color="error" onClick={logout} size="small">
+            Logout
+          </Button>
+        </Stack>
 
-      <nav aria-label="Chat rooms">
-        <RoomList
-          rooms={rooms}
-          selectedRoom={selectedRoom}
-          onJoinRoom={handleJoinRoom}
-          onCreateRoom={handleCreateRoom}
-        />
-      </nav>
-
-      <section>
+        <RoomList rooms={rooms} selectedRoom={selectedRoom} onJoinRoom={handleJoinRoom} onCreateRoom={handleCreateRoom} />
         <OnlineUsers onlineUsers={onlineUsers} />
         <RoomHeader selectedRoom={selectedRoom} />
-      </section>
 
-      <section className={styles.main} aria-label="Chat messages">
-        <MessageList messages={roomMessages[selectedRoom] || []} room={selectedRoom} />
-      </section>
+        <Box flexGrow={1} overflow="auto" mb={2}>
+          <MessageList messages={roomMessages[selectedRoom] || []} room={selectedRoom} />
+        </Box>
 
-      <footer>
         <TypingIndicator typingUser={typingUser} />
-        <MessageInput onSend={handleSend} room={selectedRoom} />
-      </footer>
-    </main>
+
+        <Box mt={2}>
+          <MessageInput onSend={handleSend} room={selectedRoom} />
+        </Box>
+      </Paper>
+    </Container>
   );
 }
-
-export default ChatPage;

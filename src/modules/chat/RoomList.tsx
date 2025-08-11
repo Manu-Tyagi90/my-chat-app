@@ -1,4 +1,4 @@
-import styles from "./RoomList.module.css";
+import { Stack, Button } from "@mui/material";
 
 type Props = {
   rooms: string[];
@@ -7,37 +7,35 @@ type Props = {
   onCreateRoom: () => void;
 };
 
-const RoomList = ({ rooms, selectedRoom, onJoinRoom, onCreateRoom }: Props) => (
-  <nav className={styles.roomNav} aria-label="Chat rooms">
-    <ul className={styles.roomList}>
+export default function RoomList({
+  rooms,
+  selectedRoom,
+  onJoinRoom,
+  onCreateRoom
+}: Props) {
+  return (
+    <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
       {rooms.map((room) => (
-        <li key={room}>
-          <button
-            className={
-              room === selectedRoom
-                ? `${styles.roomBtn} ${styles.selected}`
-                : styles.roomBtn
-            }
-            aria-current={room === selectedRoom ? "page" : undefined}
-            onClick={() => onJoinRoom(room)}
-            type="button"
-          >
-            {room}
-          </button>
-        </li>
-      ))}
-      <li>
-        <button
-          className={styles.createBtn}
-          onClick={onCreateRoom}
-          type="button"
-          aria-label="Create new room"
+        <Button
+          key={room}
+          variant={room === selectedRoom ? "contained" : "outlined"}
+          color={room === selectedRoom ? "primary" : "inherit"}
+          onClick={() => onJoinRoom(room)}
+          size="small"
+          sx={{ textTransform: "none" }}
         >
-          + New Room
-        </button>
-      </li>
-    </ul>
-  </nav>
-);
-
-export default RoomList;
+          {room}
+        </Button>
+      ))}
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={onCreateRoom}
+        size="small"
+        sx={{ textTransform: "none" }}
+      >
+        + New Room
+      </Button>
+    </Stack>
+  );
+}

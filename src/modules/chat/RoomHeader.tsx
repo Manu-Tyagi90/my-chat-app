@@ -1,13 +1,19 @@
-import styles from "./RoomHeader.module.css";
+import { Typography, Box } from "@mui/material";
 
 type Props = {
   selectedRoom: string;
 };
 
-const RoomHeader = ({ selectedRoom }: Props) => (
-  <header className={styles.roomHeader} aria-label="Current chat room">
-    <h2 className={styles.roomTitle}>Room: {selectedRoom}</h2>
-  </header>
-);
-
-export default RoomHeader;
+export default function RoomHeader({ selectedRoom }: Props) {
+  return (
+    <Box sx={{ mb: 1, mt: 1 }}>
+      <Typography
+        variant="subtitle1"
+        fontWeight="bold"
+        color="primary"
+      >
+        Room: {selectedRoom}
+      </Typography>
+    </Box>
+  );
+}
