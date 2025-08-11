@@ -9,6 +9,7 @@ import OnlineUsers from "../modules/chat/OnlineUsers";
 import RoomHeader from "../modules/chat/RoomHeader";
 import TypingIndicator from "../modules/chat/TypingIndicator";
 import type { Message } from "../types/message";
+import styles from "./ChatPage.module.css";
 
 function ChatPage() {
   const { user, logout } = useUser();
@@ -53,7 +54,6 @@ function ChatPage() {
       setOnlineUsers(users);
     });
 
-    // Typing indicator (per room)
     socket.on("user_typing", (username: string) => {
       if (username !== user.username) setTypingUser(username);
     });
@@ -130,29 +130,35 @@ function ChatPage() {
   if (!user) return null;
 
   return (
-    <div style={{ maxWidth: 600, margin: "40px auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2>Welcome, {user.username}!</h2>
-        <button onClick={logout}>Logout</button>
-      </div>
+    <main className={styles.container}>
+      <header className={styles.header}>
+        <h1 className={styles.title}>Welcome, {user.username}!</h1>
+        <button className={styles.logoutBtn} onClick={logout}>Logout</button>
+      </header>
 
-      <RoomList
-        rooms={rooms}
-        selectedRoom={selectedRoom}
-        onJoinRoom={handleJoinRoom}
-        onCreateRoom={handleCreateRoom}
-      />
+      <nav aria-label="Chat rooms">
+        <RoomList
+          rooms={rooms}
+          selectedRoom={selectedRoom}
+          onJoinRoom={handleJoinRoom}
+          onCreateRoom={handleCreateRoom}
+        />
+      </nav>
 
-      <OnlineUsers onlineUsers={onlineUsers} />
+      <section>
+        <OnlineUsers onlineUsers={onlineUsers} />
+        <RoomHeader selectedRoom={selectedRoom} />
+      </section>
 
-      <RoomHeader selectedRoom={selectedRoom} />
+      <section className={styles.main} aria-label="Chat messages">
+        <MessageList messages={roomMessages[selectedRoom] || []} room={selectedRoom} />
+      </section>
 
-      <MessageList messages={roomMessages[selectedRoom] || []} room={selectedRoom} />
-
-      <TypingIndicator typingUser={typingUser} />
-
-      <MessageInput onSend={handleSend} room={selectedRoom} />
-    </div>
+      <footer>
+        <TypingIndicator typingUser={typingUser} />
+        <MessageInput onSend={handleSend} room={selectedRoom} />
+      </footer>
+    </main>
   );
 }
 

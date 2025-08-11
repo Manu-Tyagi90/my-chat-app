@@ -1,4 +1,6 @@
 // src/utils/userColor.ts
+
+// Returns a consistent color for each username
 export function getUserColor(username: string): string {
   const colors = [
     "#e57373", "#64b5f6", "#81c784", "#ffd54f", "#ba68c8",

@@ -1,11 +1,21 @@
+import styles from "./OnlineUsers.module.css";
+
 type Props = {
   onlineUsers: string[];
 };
 
 const OnlineUsers = ({ onlineUsers }: Props) => (
-  <div style={{ marginBottom: 12, padding: 8, background: "#f5f5f5", borderRadius: 4 }}>
-    <strong>Online Users:</strong> {onlineUsers.join(", ")}
-  </div>
+  <aside className={styles.usersAside} aria-label="Online users">
+    <div className={styles.usersHeader}>Online Users:</div>
+    <ul className={styles.usersList}>
+      {onlineUsers.map((user) => (
+        <li key={user} className={styles.userItem}>
+          <span className={styles.userDot} aria-hidden="true" />
+          <span className={styles.userName}>{user}</span>
+        </li>
+      ))}
+    </ul>
+  </aside>
 );
 
 export default OnlineUsers;

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useMemo } from "react";
 import type { ReactNode } from "react";
 
 type User = {
@@ -19,8 +19,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const login = (username: string) => setUser({ username });
   const logout = () => setUser(null);
 
+  // useMemo to avoid unnecessary re-renders
+  const value = useMemo(() => ({ user, login, logout }), [user]);
+
   return (
-    <UserContext.Provider value={{ user, login, logout }}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );

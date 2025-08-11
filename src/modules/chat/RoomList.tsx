@@ -1,3 +1,5 @@
+import styles from "./RoomList.module.css";
+
 type Props = {
   rooms: string[];
   selectedRoom: string;
@@ -6,39 +8,36 @@ type Props = {
 };
 
 const RoomList = ({ rooms, selectedRoom, onJoinRoom, onCreateRoom }: Props) => (
-  <div style={{ marginBottom: 12, padding: 8, background: "#f5f5f5", borderRadius: 4 }}>
-    <strong>Rooms:</strong>
-    {rooms.map((room) => (
-      <button
-        key={room}
-        style={{
-          marginLeft: 8,
-          fontWeight: selectedRoom === room ? "bold" : "normal",
-          background: selectedRoom === room ? "#d0eaff" : "white",
-          border: "1px solid #ccc",
-          borderRadius: 4,
-          padding: "2px 8px",
-          cursor: "pointer"
-        }}
-        onClick={() => onJoinRoom(room)}
-      >
-        {room}
-      </button>
-    ))}
-    <button
-      style={{
-        marginLeft: 8,
-        background: "#b2f2bb",
-        border: "1px solid #ccc",
-        borderRadius: 4,
-        padding: "2px 8px",
-        cursor: "pointer"
-      }}
-      onClick={onCreateRoom}
-    >
-      + New Room
-    </button>
-  </div>
+  <nav className={styles.roomNav} aria-label="Chat rooms">
+    <ul className={styles.roomList}>
+      {rooms.map((room) => (
+        <li key={room}>
+          <button
+            className={
+              room === selectedRoom
+                ? `${styles.roomBtn} ${styles.selected}`
+                : styles.roomBtn
+            }
+            aria-current={room === selectedRoom ? "page" : undefined}
+            onClick={() => onJoinRoom(room)}
+            type="button"
+          >
+            {room}
+          </button>
+        </li>
+      ))}
+      <li>
+        <button
+          className={styles.createBtn}
+          onClick={onCreateRoom}
+          type="button"
+          aria-label="Create new room"
+        >
+          + New Room
+        </button>
+      </li>
+    </ul>
+  </nav>
 );
 
 export default RoomList;

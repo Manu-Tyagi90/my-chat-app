@@ -1,0 +1,80 @@
+/* MessageList.module.css */
+
+.list {
+  height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.messageRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+}
+
+.username {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.text {
+  font-size: 1rem;
+  color: #22223b;
+}
+
+.timestamp {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.seen {
+  margin-left: 8px;
+  color: #22c55e;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .list {
+    height: 180px;
+    padding: 4px;
+    font-size: 0.95rem;
+  }
+  .avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+  .messageRow {
+    gap: 6px;
+  }
+}

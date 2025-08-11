@@ -1,10 +1,12 @@
+import styles from "./TypingIndicator.module.css";
+
 type Props = {
   typingUser: string | null;
 };
 
 const TypingIndicator = ({ typingUser }: Props) =>
   typingUser ? (
-    <div style={{ fontStyle: "italic", color: "#888", marginBottom: 8 }}>
+    <div className={styles.typingIndicator} role="status" aria-live="polite">
       {typingUser} is typing...
     </div>
   ) : null;

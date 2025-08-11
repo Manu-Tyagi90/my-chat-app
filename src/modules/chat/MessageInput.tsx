@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { socket } from "../../services/socket";
 import { useUser } from "../../context/UserContext";
+import styles from "./MessageInput.module.css";
 
 type Props = {
   onSend: (content: string) => void;
@@ -42,16 +43,20 @@ const MessageInput = ({ onSend, room }: Props) => {
   };
 
   return (
-    <form onSubmit={handleSend} style={{ display: "flex", gap: 8 }}>
+    <form className={styles.inputForm} onSubmit={handleSend} aria-label="Send message">
       <input
         type="text"
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
         placeholder="Type a message..."
-        style={{ flex: 1, padding: 8 }}
+        className={styles.inputBox}
+        aria-label="Type a message"
+        autoComplete="off"
       />
-      <button type="submit" style={{ padding: "8px 16px" }}>Send</button>
+      <button type="submit" className={styles.sendBtn} aria-label="Send message">
+        Send
+      </button>
     </form>
   );
 };

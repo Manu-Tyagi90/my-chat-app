@@ -1,0 +1,27 @@
+/* RoomHeader.module.css */
+
+.roomHeader {
+  margin-bottom: 10px;
+  padding: 8px 0 4px 0;
+  border-bottom: 1px solid #e5e7eb;
+  background: transparent;
+}
+
+.roomTitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #3730a3;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .roomHeader {
+    padding: 4px 0 2px 0;
+    margin-bottom: 6px;
+  }
+  .roomTitle {
+    font-size: 1rem;
+  }
+}
