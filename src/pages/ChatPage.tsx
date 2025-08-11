@@ -24,6 +24,76 @@ if (typeof window !== "undefined") {
   notificationSound = new Audio("/notification.mp3");
 }
 
+const playNotificationSound = () => {
+  if (!notificationSound) return;
+  
+  notificationSound.currentTime = 0;
+  notificationSound.play().catch(() => {
+    // Some browsers block sound if not user-initiated
+  });
+};
+
+const showBrowserNotification = (message: Message, room: string) => {
+  if (
+    "Notification" in window &&
+    Notification.permission === "granted" &&
+    document.visibilityState !== "visible"
+  ) {
+    new Notification(
+      `${message.username} in ${room}`,
+      {
+        body: message.content,
+        icon: "/favicon.ico"
+      }
+    );
+    playNotificationSound();
+  }
+};
+
+const checkMessageExists = (messages: Message[], newMessage: Message): boolean => {
+  return messages.some(
+    (msg) =>
+      msg.username === newMessage.username &&
+      msg.timestamp === newMessage.timestamp &&
+      msg.content === newMessage.content
+  );
+};
+
+const updateRoomMessages = (
+  prevMessages: { [room: string]: Message[] },
+  room: string,
+  newMessage: Message
+): { [room: string]: Message[] } => {
+  const roomMessages = prevMessages[room] || [];
+  
+  if (checkMessageExists(roomMessages, newMessage)) {
+    return prevMessages;
+  }
+
+  return {
+    ...prevMessages,
+    [room]: [...roomMessages, newMessage]
+  };
+};
+
+const updateSeenMessages = (
+  prevMessages: { [room: string]: Message[] },
+  room: string,
+  seenBy: string
+): { [room: string]: Message[] } => {
+  const roomMessages = prevMessages[room];
+  if (!roomMessages) return prevMessages;
+
+  return {
+    ...prevMessages,
+    [room]: roomMessages.map(msg =>
+      !msg.seenBy?.includes(seenBy)
+        ? { ...msg, seenBy: [...(msg.seenBy || []), seenBy] }
+        : msg
+    )
+  };
+};
+
 export default function ChatPage() {
   const { user, logout } = useUser();
   const navigate = useNavigate();
@@ -43,6 +113,68 @@ export default function ChatPage() {
     }
   }, []);
 
+  const handleReceiveMessage = (data: { room: string; message: Message }) => {
+    setRoomMessages(prev => {
+      const updatedMessages = updateRoomMessages(prev, data.room, data.message);
+      
+      // Show notification if message is from another user
+      if (data.message.username !== user?.username) {
+        showBrowserNotification(data.message, data.room);
+      }
+
+      return updatedMessages;
+    });
+  };
+
+  const handleRoomList = (roomList: string[]) => {
+    setRooms(roomList);
+  };
+
+  const handleRoomMessageHistory = (data: { room: string; messages: Message[] }) => {
+    setRoomMessages(prev => ({ ...prev, [data.room]: data.messages }));
+  };
+
+  const handleOnlineUsers = (users: string[]) => {
+    setOnlineUsers(users);
+  };
+
+  const handleUserTyping = (username: string) => {
+    if (username !== user?.username) {
+      setTypingUser(username);
+    }
+  };
+
+  const handleUserStopTyping = (username: string) => {
+    if (username === typingUser) {
+      setTypingUser(null);
+    }
+  };
+
+  const handleSeenUpdate = (data: { room: string; seenBy: string }) => {
+    setRoomMessages(prev => updateSeenMessages(prev, data.room, data.seenBy));
+  };
+
+  const setupSocketListeners = () => {
+    socket.on("receive_message", handleReceiveMessage);
+    socket.on("room_list", handleRoomList);
+    socket.on("room_message_history", handleRoomMessageHistory);
+    socket.on("online_users", handleOnlineUsers);
+    socket.on("user_typing", handleUserTyping);
+    socket.on("user_stop_typing", handleUserStopTyping);
+    socket.on("seen_update", handleSeenUpdate);
+  };
+
+  const cleanupSocketListeners = () => {
+    socket.off("receive_message");
+    socket.off("room_list");
+    socket.off("room_message_history");
+    socket.off("online_users");
+    socket.off("user_typing");
+    socket.off("user_stop_typing");
+    socket.off("seen_update");
+    socket.disconnect();
+  };
+
   // Register socket listeners once when user is present
   useEffect(() => {
     if (!user) {
@@ -52,92 +184,9 @@ export default function ChatPage() {
 
     socket.connect();
     socket.emit("join", user.username);
+    setupSocketListeners();
 
-    socket.on("receive_message", (data: { room: string; message: Message }) => {
-      setRoomMessages(prev => {
-        const alreadyExists = (prev[data.room] || []).some(
-          (msg) =>
-            msg.username === data.message.username &&
-            msg.timestamp === data.message.timestamp &&
-            msg.content === data.message.content
-        );
-        if (alreadyExists) return prev;
-
-        // Browser notification + sound
-        if (
-          data.message.username !== user?.username &&
-          "Notification" in window &&
-          Notification.permission === "granted" &&
-          document.visibilityState !== "visible"
-        ) {
-          new Notification(
-            `${data.message.username} in ${data.room}`,
-            {
-              body: data.message.content,
-              icon: "/favicon.ico"
-            }
-          );
-          if (notificationSound) {
-            try {
-              notificationSound.currentTime = 0;
-              notificationSound.play().catch((e) => {
-                // Some browsers block sound if not user-initiated
-                // console.log("Notification sound play error:", e);
-              });
-            } catch (e) {
-              // console.log("Notification sound error:", e);
-            }
-          }
-        }
-
-        return {
-          ...prev,
-          [data.room]: [...(prev[data.room] || []), data.message]
-        };
-      });
-    });
-
-    socket.on("room_list", (roomList: string[]) => {
-      setRooms(roomList);
-    });
-
-    socket.on("room_message_history", (data: { room: string; messages: Message[] }) => {
-      setRoomMessages(prev => ({ ...prev, [data.room]: data.messages }));
-    });
-
-    socket.on("online_users", (users: string[]) => {
-      setOnlineUsers(users);
-    });
-
-    socket.on("user_typing", (username: string) => {
-      if (username !== user.username) setTypingUser(username);
-    });
-
-    socket.on("user_stop_typing", (username: string) => {
-      if (username === typingUser) setTypingUser(null);
-    });
-
-    socket.on("seen_update", (data: { room: string; seenBy: string }) => {
-      setRoomMessages(prev => ({
-        ...prev,
-        [data.room]: prev[data.room]?.map(msg =>
-          !msg.seenBy?.includes(data.seenBy)
-            ? { ...msg, seenBy: [...(msg.seenBy || []), data.seenBy] }
-            : msg
-        ) || []
-      }));
-    });
-
-    return () => {
-      socket.off("receive_message");
-      socket.off("room_list");
-      socket.off("room_message_history");
-      socket.off("online_users");
-      socket.off("user_typing");
-      socket.off("user_stop_typing");
-      socket.off("seen_update");
-      socket.disconnect();
-    };
+    return cleanupSocketListeners;
   }, [user, navigate]);
 
   // Only emit join/leave when the room actually changes

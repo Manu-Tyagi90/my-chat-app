@@ -3,7 +3,6 @@ import {
   List,
   ListItem,
   ListItemAvatar,
-  ListItemText,
   Avatar,
   Typography,
   Box,
@@ -16,9 +15,155 @@ import { getUserColor } from "../../utils/userColor";
 import { socket } from "../../services/socket";
 import { useUser } from "../../context/UserContext";
 
-type Props = {
+type Props = Readonly<{
   messages: Message[];
   room?: string;
+}>;
+
+const renderSystemMessage = (msg: Message, key: string) => (
+  <ListItem key={key} sx={{ justifyContent: "center" }}>
+    <Typography
+      variant="caption"
+      color="text.secondary"
+      sx={{
+        fontStyle: "italic",
+        textAlign: "center",
+        whiteSpace: "pre-line"
+      }}
+    >
+      {msg.content}
+    </Typography>
+  </ListItem>
+);
+
+const renderUserMessage = (msg: Message, key: string, isMe: boolean, room?: string) => (
+  <ListItem
+    key={key}
+    alignItems="flex-start"
+    sx={{
+      flexDirection: isMe ? "row-reverse" : "row",
+      textAlign: isMe ? "right" : "left",
+      border: "none",
+      background: "none"
+    }}
+  >
+    <ListItemAvatar>
+      <Avatar
+        sx={{
+          bgcolor: getUserColor(msg.username),
+          color: "#fff"
+        }}
+      >
+        {msg.username[0].toUpperCase()}
+      </Avatar>
+    </ListItemAvatar>
+
+    <MessageBubble msg={msg} isMe={isMe} room={room} />
+  </ListItem>
+);
+
+const MessageBubble = ({ msg, isMe, room }: { msg: Message; isMe: boolean; room?: string }) => (
+  <Box
+    sx={{
+      position: "relative",
+      display: "inline-block",
+      maxWidth: "80%",
+      ml: isMe ? "auto" : 0,
+      mr: isMe ? 0 : "auto",
+      mb: 0.5,
+      bgcolor: isMe ? "primary.main" : "grey.100",
+      color: isMe ? "#fff" : "text.primary",
+      borderRadius: isMe
+        ? "18px 18px 4px 18px"
+        : "18px 18px 18px 4px",
+      px: 2,
+      py: 1,
+      boxShadow: 1,
+      fontSize: { xs: "0.95rem", sm: "1rem" },
+      "&::after": {
+        content: '""',
+        position: "absolute",
+        bottom: 0,
+        right: isMe ? -10 : "auto",
+        left: isMe ? "auto" : -10,
+        width: 0,
+        height: 0,
+        borderTop: "10px solid transparent",
+        borderBottom: "10px solid transparent",
+        borderLeft: isMe ? "10px solid #1976d2" : "none",
+        borderRight: !isMe ? "10px solid #e0e0e0" : "none"
+      }
+    }}
+  >
+    <MessageHeader msg={msg} isMe={isMe} />
+    <MessageContent msg={msg} isMe={isMe} />
+    <SeenIndicator msg={msg} room={room} isMe={isMe} />
+  </Box>
+);
+
+const MessageHeader = ({ msg, isMe }: { msg: Message; isMe: boolean }) => (
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: isMe ? "flex-end" : "flex-start",
+      gap: 1,
+      mb: 0.5
+    }}
+  >
+    <Typography
+      fontWeight="bold"
+      color={isMe ? "#fff" : "primary"}
+      variant="body2"
+      sx={{
+        flexShrink: 0,
+        '@media (max-width:600px)': { fontSize: "0.75rem" }
+      }}
+    >
+      {msg.username}
+    </Typography>
+    <Typography
+      variant="caption"
+      color={isMe ? "#e3f2fd" : "text.secondary"}
+    >
+      {new Date(msg.timestamp).toLocaleTimeString()}
+    </Typography>
+  </Box>
+);
+
+const MessageContent = ({ msg, isMe }: { msg: Message; isMe: boolean }) => (
+  <Typography
+    variant="body1"
+    sx={{
+      wordBreak: "break-word",
+      overflowWrap: "anywhere",
+      color: isMe ? "#fff" : "text.primary",
+      '@media (max-width:600px)': {
+        fontSize: "0.85rem"
+      }
+    }}
+  >
+    {msg.content}
+  </Typography>
+);
+
+const SeenIndicator = ({ msg, room, isMe }: { msg: Message; room?: string; isMe: boolean }) => {
+  if (!msg.seenBy || !room || msg.seenBy.length <= 1) return null;
+
+  return (
+    <Chip
+      label={`✓ Seen by ${msg.seenBy.length}`}
+      size="small"
+      color="success"
+      sx={{
+        mt: 0.5,
+        borderRadius: 1,
+        fontSize: "0.7rem",
+        background: isMe ? "#fff" : "#e0f2f1",
+        color: isMe ? "#1976d2" : "#388e3c"
+      }}
+    />
+  );
 };
 
 export default function MessageList({ messages, room }: Props) {
@@ -78,136 +223,9 @@ export default function MessageList({ messages, room }: Props) {
           const isSystem = msg.username === "System";
           const key = msg.timestamp + msg.username;
 
-          if (isSystem) {
-            return (
-              <ListItem key={key} sx={{ justifyContent: "center" }}>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{
-                    fontStyle: "italic",
-                    textAlign: "center",
-                    whiteSpace: "pre-line"
-                  }}
-                >
-                  {msg.content}
-                </Typography>
-              </ListItem>
-            );
-          }
-
-          return (
-            <ListItem
-              key={key}
-              alignItems="flex-start" // Only "flex-start" or "center" allowed
-              sx={{
-                flexDirection: isMe ? "row-reverse" : "row",
-                textAlign: isMe ? "right" : "left",
-                border: "none",
-                background: "none"
-              }}
-            >
-              <ListItemAvatar>
-                <Avatar
-                  sx={{
-                    bgcolor: getUserColor(msg.username),
-                    color: "#fff"
-                  }}
-                >
-                  {msg.username[0].toUpperCase()}
-                </Avatar>
-              </ListItemAvatar>
-
-              {/* Bubble with tail */}
-              <Box
-                sx={{
-                  position: "relative",
-                  display: "inline-block",
-                  maxWidth: "80%",
-                  ml: isMe ? "auto" : 0,
-                  mr: isMe ? 0 : "auto",
-                  mb: 0.5,
-                  bgcolor: isMe ? "primary.main" : "grey.100",
-                  color: isMe ? "#fff" : "text.primary",
-                  borderRadius: isMe
-                    ? "18px 18px 4px 18px"
-                    : "18px 18px 18px 4px",
-                  px: 2,
-                  py: 1,
-                  boxShadow: 1,
-                  fontSize: { xs: "0.95rem", sm: "1rem" },
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    bottom: 0,
-                    right: isMe ? -10 : "auto",
-                    left: isMe ? "auto" : -10,
-                    width: 0,
-                    height: 0,
-                    borderTop: "10px solid transparent",
-                    borderBottom: "10px solid transparent",
-                    borderLeft: isMe ? "10px solid #1976d2" : "none",
-                    borderRight: !isMe ? "10px solid #e0e0e0" : "none"
-                  }
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: isMe ? "flex-end" : "flex-start",
-                    gap: 1,
-                    mb: 0.5
-                  }}
-                >
-                  <Typography
-                    fontWeight="bold"
-                    color={isMe ? "#fff" : "primary"}
-                    variant="body2"
-                    sx={{
-                      flexShrink: 0,
-                      '@media (max-width:600px)': { fontSize: "0.75rem" }
-                    }}
-                  >
-                    {msg.username}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color={isMe ? "#e3f2fd" : "text.secondary"}
-                  >
-                    {new Date(msg.timestamp).toLocaleTimeString()}
-                  </Typography>
-                </Box>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    wordBreak: "break-word",
-                    overflowWrap: "anywhere",
-                    color: isMe ? "#fff" : "text.primary",
-                    '@media (max-width:600px)': {
-                      fontSize: "0.85rem"
-                    }
-                  }}
-                >
-                  {msg.content}
-                </Typography>
-                {msg.seenBy && room && msg.seenBy.length > 1 && (
-                  <Chip
-                    label={`✓ Seen by ${msg.seenBy.length}`}
-                    size="small"
-                    color="success"
-                    sx={{
-                      mt: 0.5,
-                      borderRadius: 1,
-                      fontSize: "0.7rem",
-                      background: isMe ? "#fff" : "#e0f2f1",
-                      color: isMe ? "#1976d2" : "#388e3c"
-                    }}
-                  />
-                )}
-              </Box>
-            </ListItem>
-          );
+          return isSystem 
+            ? renderSystemMessage(msg, key)
+            : renderUserMessage(msg, key, isMe, room);
         })}
         <div ref={endRef} />
       </List>
