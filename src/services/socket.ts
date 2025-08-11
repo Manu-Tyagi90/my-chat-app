@@ -1,7 +1,5 @@
+// src/services/socket.ts
 import io from "socket.io-client";
-
-const SOCKET_URL = "http://localhost:3000";
-
-export const socket = io(SOCKET_URL, {
+export const socket = io("https://chat-application-socket-io-vite-latest.onrender.com", {
   autoConnect: false,
 });
