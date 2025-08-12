@@ -69,14 +69,14 @@ export default function AboutSettings({ onResetClick }: Props) {
       <Box sx={{ mt: 3, textAlign: 'center' }}>
         <Button 
           variant="outlined" 
-          onClick={() => window.open('https://github.com', '_blank')}
+          onClick={() => window.open('https://github.com/Manu-Tyagi90/', '_blank')}
           sx={{ mr: 2 }}
         >
           GitHub
         </Button>
         <Button 
           variant="outlined"
-          onClick={() => window.open('mailto:support@chatconnect.com')}
+          onClick={() => window.open('mailto:manutygii90@gmail.com')}
         >
           Support
         </Button>
