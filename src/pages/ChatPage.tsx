@@ -8,6 +8,7 @@ import { useChatSocket } from "../hooks/useChatSocket";
 import { useChatMessages } from "../hooks/useChatMessages";
 import { useRoomManagement } from "../hooks/useRoomManagement";
 import type { Message } from "../types/message";
+import type { UserSettings } from "../hooks/useSettings";
 
 export default function ChatPage() {
   const { user, logout } = useUser();
@@ -84,6 +85,55 @@ export default function ChatPage() {
     addMessage(selectedRoom, message);
   };
 
+  const handleSettingsChange = (newSettings: UserSettings) => {
+    // Handle settings changes if needed
+    console.log('Settings updated:', newSettings);
+    
+    // Apply settings immediately
+    applySettings(newSettings);
+  };
+
+  const applySettings = (settings: UserSettings) => {
+    // Apply theme
+    document.documentElement.setAttribute('data-theme', settings.theme);
+    
+    // Apply font size
+    const fontSizeMap: Record<string, string> = {
+      'small': '0.875rem',
+      'medium': '1rem',
+      'large': '1.125rem',
+      'extra-large': '1.25rem'
+    };
+    
+    if (settings.fontSize in fontSizeMap) {
+      document.documentElement.style.setProperty('--font-size-base', fontSizeMap[settings.fontSize]);
+    }
+    
+    // Apply compact mode
+    document.body.classList.toggle('compact-mode', settings.compactMode);
+    
+    // Apply animations
+    document.body.classList.toggle('no-animations', !settings.messageAnimations);
+    
+    // Apply notification settings
+    if (settings.desktopNotifications && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+  };
+
+  // Apply settings on mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('chatSettings');
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings) as UserSettings;
+        applySettings(settings);
+      } catch (e) {
+        console.error('Failed to parse saved settings:', e);
+      }
+    }
+  }, []);
+
   if (!user) return null;
 
   return (
@@ -119,7 +169,8 @@ export default function ChatPage() {
 
       <Settings 
         open={showSettings} 
-        onClose={() => setShowSettings(false)} 
+        onClose={() => setShowSettings(false)}
+        onSettingsChange={handleSettingsChange}
       />
     </Container>
   );

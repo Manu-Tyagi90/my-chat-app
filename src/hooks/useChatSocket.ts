@@ -4,14 +4,19 @@ import { socket } from "../services/socket";
 import type { Message } from "../types/message";
 import { useUser } from "../context/UserContext";
 
+// Define types for socket events
+type MessageData = { room: string; message: Message };
+type MessageHistoryData = { room: string; messages: Message[] };
+type SeenUpdateData = { room: string; seenBy: string };
+
 type SocketHandlers = {
-  onReceiveMessage: (data: { room: string; message: Message }) => void;
+  onReceiveMessage: (data: MessageData) => void;
   onRoomList: (roomList: string[]) => void;
-  onRoomMessageHistory: (data: { room: string; messages: Message[] }) => void;
+  onRoomMessageHistory: (data: MessageHistoryData) => void;
   onOnlineUsers: (users: string[]) => void;
   onUserTyping: (username: string) => void;
   onUserStopTyping: (username: string) => void;
-  onSeenUpdate: (data: { room: string; seenBy: string }) => void;
+  onSeenUpdate: (data: SeenUpdateData) => void;
 };
 
 export function useChatSocket(handlers: SocketHandlers) {
@@ -36,13 +41,33 @@ export function useChatSocket(handlers: SocketHandlers) {
 
     // Set up event listeners
     const setupListeners = () => {
-      socket.on("receive_message", (data: { room: string; message: Message }) => handlersRef.current.onReceiveMessage(data));
-      socket.on("room_list", (roomList: string[]) => handlersRef.current.onRoomList(roomList));
-      socket.on("room_message_history", (data: { room: string; messages: Message[] }) => handlersRef.current.onRoomMessageHistory(data));
-      socket.on("online_users", (users: string[]) => handlersRef.current.onOnlineUsers(users));
-      socket.on("user_typing", (username: string) => handlersRef.current.onUserTyping(username));
-      socket.on("user_stop_typing", (username: string) => handlersRef.current.onUserStopTyping(username));
-      socket.on("seen_update", (data: { room: string; seenBy: string }) => handlersRef.current.onSeenUpdate(data));
+      socket.on("receive_message", (data: MessageData) => 
+        handlersRef.current.onReceiveMessage(data)
+      );
+      
+      socket.on("room_list", (roomList: string[]) => 
+        handlersRef.current.onRoomList(roomList)
+      );
+      
+      socket.on("room_message_history", (data: MessageHistoryData) => 
+        handlersRef.current.onRoomMessageHistory(data)
+      );
+      
+      socket.on("online_users", (users: string[]) => 
+        handlersRef.current.onOnlineUsers(users)
+      );
+      
+      socket.on("user_typing", (username: string) => 
+        handlersRef.current.onUserTyping(username)
+      );
+      
+      socket.on("user_stop_typing", (username: string) => 
+        handlersRef.current.onUserStopTyping(username)
+      );
+      
+      socket.on("seen_update", (data: SeenUpdateData) => 
+        handlersRef.current.onSeenUpdate(data)
+      );
     };
 
     const cleanupListeners = () => {

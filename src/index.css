@@ -1,0 +1,36 @@
+/* Add this to your index.css or main CSS file */
+:root {
+  --font-size-base: 1rem;
+}
+
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --text-primary: #212121;
+  --text-secondary: #757575;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+}
+
+body.compact-mode {
+  --spacing-unit: 0.5rem;
+}
+
+body.compact-mode .MuiListItem-root {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+body.no-animations * {
+  transition: none !important;
+  animation: none !important;
+}
+
+body {
+  font-size: var(--font-size-base);
+}
